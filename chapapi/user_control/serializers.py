@@ -9,6 +9,7 @@ class LoginSerializer(serializers.Serializer):
 
 
 class RegisterSerializer(serializers.Serializer):
+    email = serializers.EmailField()
     username = serializers.CharField()
     password = serializers.CharField()
 
