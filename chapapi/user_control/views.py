@@ -13,8 +13,7 @@ from rest_framework.viewsets import ModelViewSet
 import re
 from django.db.models import Q
 from chapapi.custom_methods import IsAuthenticatedCustom
-# from rest_framework.pagination import PageNumberPagination
-# import requests
+
 
 
 def get_random(length):
@@ -35,6 +34,18 @@ def get_refresh_token():
         settings.SECRET_KEY,
         algorithm="HS256"
     )
+
+def decodeJWT(bearer):
+    if not bearer:
+        return None
+
+    token = bearer[7:]
+    decoded = jwt.decode(token, key=settings.SECRET_KEY)
+    if decoded:
+        try:
+            return CustomUser.objects.get(id=decoded["user_id"])
+        except Exception:
+            return None
 
 
 class LoginView(APIView):
@@ -140,3 +151,18 @@ class UserProfileView(ModelViewSet):
         return [normspace(' ', (t[0] or t[1]).strip()) for t in findterms(query_string)]
 
 
+class MeView(APIView):
+    permission_classes = (IsAuthenticatedCustom, )
+    serializer_class = UserProfileSerializer
+
+    def get(self, request):
+        data = {}
+        try:
+            data = self.serializer_class(request.user.user_profile).data
+        except Exception:
+            data = {
+                "user": {
+                    "id": request.user.id
+                }
+            }
+        return Response(data, status=200)
